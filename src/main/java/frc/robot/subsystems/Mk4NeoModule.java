@@ -5,9 +5,9 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkMaxPIDController;
 import com.ctre.phoenix.sensors.CANCoder;
+import org.a05annex.util.AngleD;
 import org.jetbrains.annotations.NotNull;
 
-import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import frc.robot.Constants;
 
 
@@ -23,49 +23,55 @@ import static org.a05annex.util.Utl.*;
  * absolute wheel direction.
  */
 public class Mk4NeoModule {
+    static private final AngleD _PI = new AngleD(AngleD.RADIANS, Math.PI);
+    static private final AngleD _NEG_PI = new AngleD(AngleD.RADIANS, -Math.PI);
+    static private final AngleD _TWO_PI = new AngleD(AngleD.RADIANS, 2.0 * Math.PI);
+    static private final AngleD _PI_OVER_2 = new AngleD(AngleD.RADIANS, Math.PI/2.0);
+    static private final AngleD _NEG_PI_OVER_2 = new AngleD(AngleD.RADIANS, -(Math.PI/2.0));
 
     // This is the physical hardware wired to the roborio
-    private final CANSparkMax m_driveMotor;
-    private final CANSparkMax m_spinMotor;
-    private final CANCoder m_calibrationEncoder;
+    private final CANSparkMax driveMotor;
+    private final CANSparkMax directionMotor;
+    private final CANCoder calibrationEncoder;
 
     // These are the components of the physical hardware
-    private final RelativeEncoder m_driveEncoder;
-    private final SparkMaxPIDController m_drivePID;
-    private final RelativeEncoder m_spinEncoder;
-    private final SparkMaxPIDController m_spinPID;
+    private final RelativeEncoder driveEncoder;
+    private final SparkMaxPIDController drivePID;
+    private final RelativeEncoder directionEncoder;
+    private final SparkMaxPIDController directionPID;
 
     // This is the initial 0.0 degree position calibration
-    private final double m_calibrationOffset;
+    private final double calibrationOffset;
     /**
      * A multiplier for the speed that is either 1.0 (forward) or -1.0 (backwards) because the shortest
      * spin to the desired direction may be the backwards direction of the wheel, which requires the speed
      * to be reversed.
      */
-    private double m_speedMultiplier = 1.0;
+    private double speedMultiplier = 1.0;
     /**
      * The last angle the wheel was set to, in radians. this may be either the front or the back of
-     * the wheel - see {@link #m_speedMultiplier) documentation for determining whether this is the
+     * the wheel - see {@link #speedMultiplier ) documentation for determining whether this is the
      * orientation of the front or the back. This will be in the range -pi to pi.
      */
-    private double m_lastRadians = 0.0;
+    private AngleD lastDirection = new AngleD(AngleD.RADIANS, 0.0);
     /**
-     * The last spin encoder value that was set. Note, we always set the next spin by using a change angle.
+     * The last direction encoder value that was set. Note, we always set the next spin by using a change angle.
      * This means the encoder setting can be anywhere from -infinity to +infinity.
      */
-    private double m_lastEncoder = 0.0;
+    private double lastDirectionEncoder = 0.0;
     /**
      * The last speed value that was set for this module, in the range 0.0 to 1.0.
      */
-    private double m_lastSpeed = 0.0;
-    private boolean m_driveBySpeed = true;
+    private double lastSpeed = 0.0;
+
+    private boolean driveBySpeed = true;
 
     /**
      * * The factory that creates the DriveModule given the
      *
      * @param driveCAN          CAN address for the motor that drives the wheel forward.
      * @param spinCAN           CAN address for the motor that spins the wheel around.
-     * @param calibrationCAN      CAN address for the CANcoder.
+     * @param calibrationCAN    CAN address for the CANcoder.
      * @param calibrationOffset The value of the direction potentiometer that will point the module forward.
      * @return (not null) Returns the initialized drive module.
      */
@@ -88,48 +94,49 @@ public class Mk4NeoModule {
      * Instantiate a DriveModule. All of instanced robot hardware control classes are passed in so this
      * module can be tested using the JUnit test framework.
      *
-     * @param driveMotor (CANSparkMax, not null) The drive motor controller.
-     * @param driveEncoder (RelativeEncoder, not null) The drive motor encoder.
-     * @param drivePID (CANPIDController, not null) The drive motor PID controller.
-     * @param spinMotor (CANSparkMax, not null) The spin motor controller.
-     * @param spinEncoder (RelativeEncoder, not null) The spin motor encoder.
-     * @param spinPID (CANPIDController, not null) The spin motor PID controller.
+     * @param driveMotor         (CANSparkMax, not null) The drive motor controller.
+     * @param driveEncoder       (RelativeEncoder, not null) The drive motor encoder.
+     * @param drivePID           (CANPIDController, not null) The drive motor PID controller.
+     * @param directionMotor     (CANSparkMax, not null) The spin motor controller.
+     * @param directionEncoder   (RelativeEncoder, not null) The spin motor encoder.
+     * @param directionPID       (CANPIDController, not null) The spin motor PID controller.
      * @param calibrationEncoder (CANCoder, not null) The spin analog position encoder which provides
-     *                      the absolute spin position of the module.
-     * @param calibrationOffset The value of the analog potentiometer that will point the module forward.
+     *                           the absolute spin position of the module.
+     * @param calibrationOffset  The value of the analog potentiometer that will point the module forward.
      */
-    public Mk4NeoModule(@NotNull CANSparkMax driveMotor, RelativeEncoder driveEncoder, SparkMaxPIDController drivePID,
-                        CANSparkMax spinMotor, RelativeEncoder spinEncoder, SparkMaxPIDController spinPID,
-                        CANCoder calibrationEncoder, double calibrationOffset) {
+    public Mk4NeoModule(@NotNull CANSparkMax driveMotor, @NotNull RelativeEncoder driveEncoder,
+                        @NotNull SparkMaxPIDController drivePID, @NotNull CANSparkMax directionMotor,
+                        @NotNull RelativeEncoder directionEncoder, @NotNull SparkMaxPIDController directionPID,
+                        @NotNull CANCoder calibrationEncoder, double calibrationOffset) {
 
-        m_driveMotor = driveMotor;
-        m_driveEncoder = driveEncoder;
-        m_drivePID = drivePID;
-        m_spinMotor = spinMotor;
-        m_spinEncoder = spinEncoder;
-        m_spinPID = spinPID;
-        m_calibrationEncoder = calibrationEncoder;
+        this.driveMotor = driveMotor;
+        this.driveEncoder = driveEncoder;
+        this.drivePID = drivePID;
+        this.directionMotor = directionMotor;
+        this.directionEncoder = directionEncoder;
+        this.directionPID = directionPID;
+        this.calibrationEncoder = calibrationEncoder;
 
         // Initialize the calibration CANcoder
         // TODO: do this ...... see the CANcoder documentation.
 
         // reset motor controllers to factory default
-        m_driveMotor.restoreFactoryDefaults();
-        m_spinMotor.restoreFactoryDefaults();
+        this.driveMotor.restoreFactoryDefaults();
+        this.directionMotor.restoreFactoryDefaults();
 
         // invert the spin so positive is a clockwise spin
-        m_spinMotor.setInverted(true);
+        this.directionMotor.setInverted(true);
 
         // update PID controllers for spin and drive motors and initialize them
-        initPID(m_drivePID, Constants.DRIVE_kFF, Constants.DRIVE_kP, Constants.DRIVE_kI, Constants.DRIVE_IZONE);
-        initPID(m_spinPID, 0.0, Constants.SPIN_kP, Constants.SPIN_kI, 0.0);
+        initPID(this.drivePID, Constants.DRIVE_kFF, Constants.DRIVE_kP, Constants.DRIVE_kI, Constants.DRIVE_IZONE);
+        initPID(this.directionPID, 0.0, Constants.SPIN_kP, Constants.SPIN_kI, 0.0);
 
         // calibrate
-        m_calibrationOffset = calibrationOffset;
-        calibrate(); // reset spin encoder to forward
-        m_spinPID.setReference(0.0, CANSparkMax.ControlType.kPosition);
-        m_lastRadians = 0.0;
-        m_lastEncoder = 0.0;
+        this.calibrationOffset = calibrationOffset;
+        calibrate(); // reset direction encoder position
+        this.directionPID.setReference(0.0, CANSparkMax.ControlType.kPosition);
+        lastDirection.setValue(AngleD.RADIANS, 0.0);
+        lastDirectionEncoder = 0.0;
     }
 
     /**
@@ -137,8 +144,8 @@ public class Mk4NeoModule {
      * constants for best control.
      */
     public void setSpinPID() {
-        m_spinPID.setP(Constants.SPIN_kP);
-        m_spinPID.setI(Constants.SPIN_kI);
+        directionPID.setP(Constants.SPIN_kP);
+        directionPID.setI(Constants.SPIN_kI);
     }
 
     /**
@@ -146,17 +153,17 @@ public class Mk4NeoModule {
      * * constants for best control.
      */
     public void setDrivePID() {
-        m_drivePID.setP(Constants.DRIVE_kP);
-        m_drivePID.setI(Constants.DRIVE_kI);
-        m_drivePID.setFF(Constants.DRIVE_kFF);
-        m_drivePID.setIZone(Constants.DRIVE_IZONE);
+        drivePID.setP(Constants.DRIVE_kP);
+        drivePID.setI(Constants.DRIVE_kI);
+        drivePID.setFF(Constants.DRIVE_kFF);
+        drivePID.setIZone(Constants.DRIVE_IZONE);
     }
 
     public void setDrivePosPID() {
-        m_drivePID.setP(Constants.DRIVE_POS_kP);
-        m_drivePID.setI(Constants.DRIVE_POS_kI);
-        m_drivePID.setFF(0.0);
-        m_drivePID.setIZone(0.0);
+        drivePID.setP(Constants.DRIVE_POS_kP);
+        drivePID.setI(Constants.DRIVE_POS_kI);
+        drivePID.setFF(0.0);
+        drivePID.setIZone(0.0);
     }
 
     private void initPID(SparkMaxPIDController pid, double kFF, double kP, double kI, double kIZone) {
@@ -174,7 +181,7 @@ public class Mk4NeoModule {
      * @return The drive motor velocity (RPM)
      */
     public double getDriveEncoderVelocity() {
-        return m_driveEncoder.getVelocity();
+        return driveEncoder.getVelocity();
     }
 
     /**
@@ -183,7 +190,7 @@ public class Mk4NeoModule {
      * @return The drive motor position as read from the encoder.
      */
     public double getDriveEncoderPosition() {
-        return m_driveEncoder.getPosition();
+        return driveEncoder.getPosition();
     }
 
     /**
@@ -192,7 +199,7 @@ public class Mk4NeoModule {
      * @return The spin motor position as read from the encoder.
      */
     public double getSpinEncoderPosition() {
-        return m_spinEncoder.getPosition();
+        return directionEncoder.getPosition();
     }
 
     /**
@@ -203,7 +210,7 @@ public class Mk4NeoModule {
      * @return The analog spin encoder position.
      */
     public double getAnalogEncoderPosition() {
-        return m_calibrationEncoder.getAbsolutePosition();
+        return calibrationEncoder.getAbsolutePosition();
     }
 
     /**
@@ -212,7 +219,7 @@ public class Mk4NeoModule {
      * @return The last speed that was set in m/sec.
      */
     public double getLastSpeed() {
-        return m_lastSpeed * Constants.MAX_DRIVE_VELOCITY;
+        return lastSpeed * Constants.MAX_DRIVE_VELOCITY;
     }
 
     /**
@@ -221,104 +228,104 @@ public class Mk4NeoModule {
      * @return the last normalized speed that was set.
      */
     public double getLastNormalizedSpeed() {
-        return m_lastSpeed;
+        return lastSpeed;
     }
 
     /**
      * Get the last direction set for the module.
      *
-     * @return the last direction se (in radians)
+     * @return the last direction set.
      */
-    public double getLastRadians() {
-        return m_lastRadians;
+    public AngleD getLastDirection() {
+        return lastDirection;
     }
 
     /**
-     * Set the NEO spin encoder value using the analog encoder, so that forward is an encoder
-     * reading of 0 rotations.
+     * Set the NEO direction encoder value using the absolute direction encoder, so that forward is an encoder
+     * reading of 0 tics.
      */
-    public void calibrate() {
+    private void calibrate() {
         // (actual - offset) * 360 / 20
-        m_spinEncoder.setPosition((m_calibrationEncoder.getAbsolutePosition() - m_calibrationOffset) * 18.0);
+        directionEncoder.setPosition((calibrationEncoder.getAbsolutePosition() - calibrationOffset) * 18.0);
     }
 
-    /**
-     * Set the direction and speed of the drive wheel in this module.
-     *
-     * @param targetDegrees (double) The direction from -180.0 to 180.0 degrees where 0.0 is towards the
-     *                      front of the robot, and positive is clockwise.
-     * @param speed         (double) The normalized speed of the wheel from 0.0 to 1.0 where 1.0 is the maximum
-     *                      forward velocity.
-     */
-    public void setDegreesAndSpeed(double targetDegrees, double speed) {
-        setRadiansAndSpeed(Math.toRadians(targetDegrees), speed);
-    }
+//    /**
+//     * Set the direction and speed of the drive wheel in this module.
+//     *
+//     * @param targetDegrees (double) The direction from -180.0 to 180.0 degrees where 0.0 is towards the
+//     *                      front of the robot, and positive is clockwise.
+//     * @param speed         (double) The normalized speed of the wheel from 0.0 to 1.0 where 1.0 is the maximum
+//     *                      forward velocity.
+//     */
+//    public void setDegreesAndSpeed(double targetDegrees, double speed) {
+//        setRadiansAndSpeed(Math.toRadians(targetDegrees), speed);
+//    }
 
     /**
      * Set the module direction in radians. This code finds the closest forward-backward direction and sets the
      * foward-backaward multiplier for speed.
      *
-     * @param targetRadians (double) The direction from -pi to pi radians where 0.0 is towards the
-     *      *                      front of the robot, and positive is clockwise.
+     * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
+     *                      front of the robot, and positive is clockwise.
      */
-    public void setRadians(double targetRadians) {
+    public void setDirection(AngleD targetDirection) {
         // The real angle of the front of the wheel is 180 degrees away from the current angle if the wheel
-        // is going backwards (i.e. the m_lastAngle was the last target angle
-        double realLastForward = (m_speedMultiplier > 0.0) ? m_lastRadians :
-                (m_lastRadians < 0.0) ? m_lastRadians + PI : m_lastRadians - PI;
-        double deltaRadians = targetRadians - realLastForward;
-        m_speedMultiplier = 1.0;
+        // is going backwards (i.e. the lastDirection was the last target angle for the module
+        AngleD realLastForward = (speedMultiplier > 0.0) ? lastDirection :
+                (lastDirection.getRadians() < 0.0) ? lastDirection.add(_PI) : lastDirection.subtract(_PI);
+        AngleD deltaRadians = new AngleD(targetDirection).subtract(realLastForward);
+        speedMultiplier = 1.0;
 
         // Since there is wrap-around at -180.0 and 180.0, it is easy to create cases where only a small correction
         // is required, but a very large deltaDegrees results because the spin is in the wrong direction. If the
         // angle is greater than 180 degrees in either direction, the spin is the wrong way. So the next section
         // checks that and changes the direction of the spin is the wrong way.
-        if (deltaRadians > PI) {
-            deltaRadians -= TWO_PI;
-        } else if (deltaRadians < NEG_PI) {
-            deltaRadians += TWO_PI;
+        if (deltaRadians.getRadians() > _PI.getRadians()) {
+            deltaRadians.subtract(_TWO_PI);
+        } else if (deltaRadians.getRadians() < _NEG_PI.getRadians()) {
+            deltaRadians.add(_TWO_PI);
         }
 
         // So, the next bit is looking at whether it better to spin the front of the wheel to the
         // target and drive forward, or, to spin the back of the wheel to the target direction and drive
         // backwards - if the spin is greater than 90 degrees (pi/2 radians) either direction, it is better
         // to spin the shorter angle and run backwards.
-        if (deltaRadians > PI_OVER_2) {
-            deltaRadians -= PI;
-            m_speedMultiplier = -1.0;
-        } else if (deltaRadians < NEG_PI_OVER_2) {
-            deltaRadians += PI;
-            m_speedMultiplier = -1.0;
+        if (deltaRadians.getRadians() > _PI_OVER_2.getRadians()) {
+            deltaRadians.subtract(_PI);
+            speedMultiplier = -1.0;
+        } else if (deltaRadians.getRadians() < _NEG_PI_OVER_2.getRadians()) {
+            deltaRadians.add(_PI);
+            speedMultiplier = -1.0;
         }
 
         // Compute and set the spin value
-        m_lastRadians = targetRadians;
-        m_lastEncoder += (deltaRadians * Constants.RADIANS_TO_SPIN_ENCODER);
+        lastDirection = targetDirection;
+        lastDirectionEncoder += (deltaRadians.getRadians() * Constants.RADIANS_TO_SPIN_ENCODER);
 
-        m_spinPID.setReference(m_lastEncoder, CANSparkMax.ControlType.kPosition);
+        directionPID.setReference(lastDirectionEncoder, CANSparkMax.ControlType.kPosition);
     }
 
     /**
      * Set the direction and speed of the drive wheel in this module.
      *
-     * @param targetRadians (double) The direction from -pi to pi radians where 0.0 is towards the
+     * @param targetDirection (double) The direction from -pi to pi radians where 0.0 is towards the
      *                      front of the robot, and positive is clockwise.
      * @param speed         (double) The normalized speed of the wheel from 0.0 to 1.0 where 1.0 is the maximum
      *                      forward velocity.
      */
-    public void setRadiansAndSpeed(double targetRadians, double speed) {
+    public void setDirectionAndSpeed(AngleD targetDirection, double speed) {
 
-        setRadians(targetRadians);
+        setDirection(targetDirection);
 
         // Compute and set the speed value
-        m_lastSpeed = speed;
-        speed *= Constants.MAX_DRIVE_VELOCITY * m_speedMultiplier;
+        lastSpeed = speed;
+        speed *= Constants.MAX_DRIVE_VELOCITY * speedMultiplier;
 
-        if (!m_driveBySpeed) {
+        if (!driveBySpeed) {
             setDrivePID();
-            m_driveBySpeed = true;
+            driveBySpeed = true;
         }
-        m_drivePID.setReference(speed, CANSparkMax.ControlType.kVelocity);
+        drivePID.setReference(speed, CANSparkMax.ControlType.kVelocity);
     }
 
     /**
@@ -326,19 +333,19 @@ public class Mk4NeoModule {
      * the robot is stopped, and we are trying to get very fast response and a very solid lock on the target. This is
      * far more reliable that trying to use a PID to control rotation speed to lock on target.
      *
-     * @param targetRadians (double) The direction from -pi to pi radians where 0.0 is towards the
+     * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
      *                      front of the robot, and positive is clockwise.
-     * @param deltaTics (double) The number of tics the drive motor should mov e.
+     * @param deltaTics     (double) The number of tics the drive motor should mov e.
      */
-    public void setRadiansAndDistance(double targetRadians, double deltaTics) {
-        setRadians(targetRadians);
-        double targetTics = getDriveEncoderPosition() + deltaTics * m_speedMultiplier;
+    public void setDirectionAndDistance(AngleD targetDirection, double deltaTics) {
+        setDirection(targetDirection);
+        double targetTics = getDriveEncoderPosition() + deltaTics * speedMultiplier;
 
-        if (m_driveBySpeed) {
-            m_drivePID.setReference(0, CANSparkMax.ControlType.kVelocity);
+        if (driveBySpeed) {
+            drivePID.setReference(0, CANSparkMax.ControlType.kVelocity);
             setDrivePosPID();
-            m_driveBySpeed = false;
+            driveBySpeed = false;
         }
-        m_drivePID.setReference(targetTics, CANSparkMax.ControlType.kPosition);
+        drivePID.setReference(targetTics, CANSparkMax.ControlType.kPosition);
     }
 }
