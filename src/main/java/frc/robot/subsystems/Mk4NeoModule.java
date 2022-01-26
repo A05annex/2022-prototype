@@ -6,13 +6,8 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkMaxPIDController;
 import com.ctre.phoenix.sensors.CANCoder;
 import org.a05annex.util.AngleD;
+import org.a05annex.util.AngleUnit;
 import org.jetbrains.annotations.NotNull;
-
-import frc.robot.Constants;
-
-
-import static org.a05annex.util.Utl.*;
-
 
 /**
  * This class represents and controls an
@@ -23,12 +18,46 @@ import static org.a05annex.util.Utl.*;
  * absolute wheel direction.
  */
 public class Mk4NeoModule {
-    static private final AngleD _PI = new AngleD(AngleD.RADIANS, Math.PI);
-    static private final AngleD _NEG_PI = new AngleD(AngleD.RADIANS, -Math.PI);
-    static private final AngleD _TWO_PI = new AngleD(AngleD.RADIANS, 2.0 * Math.PI);
-    static private final AngleD _PI_OVER_2 = new AngleD(AngleD.RADIANS, Math.PI/2.0);
-    static private final AngleD _NEG_PI_OVER_2 = new AngleD(AngleD.RADIANS, -(Math.PI/2.0));
 
+    // -----------------------------------------------------------------------------------------------------------------
+    // The control constants for this specific serve module (The MK4 with Neo motors, Spark Max controllers,
+    // and a CANcoder calibration encoder) with the standard gear ratio 8:14 to 1, and a Neo unadjusted free
+    // speed of 12.0ft/sec. We measured the unloaded max speed of the Neo at about 5700RPM, here we limit the
+    // maximum speed to 5000rpn, which is .8772 of the maximum free speed (which is specified as 12 ft/sec), or
+    // 10.5ft/sec (3.2m/sec)
+    // -----------------------------------------------------------------------------------------------------------------
+    /**
+     * The maximum speed (RPM) we will ever request from the drive motor. The actual not load maximum RPM with
+     * fully charged batteries is about 5700RPM, so this gives about 12% headroom for friction, drag, battery
+     * depletion, etc.
+     */
+    static final double MAX_DRIVE_RPM= 5000;
+    /**
+     * The maximum speed of the module with this module implementation.
+     */
+    static final double MAX_METERS_PER_SEC = 3.2;
+    /**
+     * Based on telemetry feedback, 1 wheel direction revolution maps to 18 spin encoder revolutions
+     */
+    static final double RADIANS_TO_SPIN_ENCODER = 18.0 / AngleD.TWO_PI.getRadians();
+
+    // PID values for the spin spark motor encoder position controller PID loop
+    static double SPIN_kP = 0.25;
+    static double SPIN_kI = 0.0;
+
+    // PID values for the drive spark motor controller speed PID loop
+    static double DRIVE_kP = 0.00003;
+    static double DRIVE_kI = 0.000002;
+    static double DRIVE_kFF = 0.000174;
+    static double DRIVE_IZONE = 200.0;
+
+    // PID values for the drive spark motor controller position PID loop
+    static double DRIVE_POS_kP = 0.13;
+    static double DRIVE_POS_kI = 0.0;
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // The module physical hardware
+    // -----------------------------------------------------------------------------------------------------------------
     // This is the physical hardware wired to the roborio
     private final CANSparkMax driveMotor;
     private final CANSparkMax directionMotor;
@@ -40,6 +69,9 @@ public class Mk4NeoModule {
     private final RelativeEncoder directionEncoder;
     private final SparkMaxPIDController directionPID;
 
+    // -----------------------------------------------------------------------------------------------------------------
+    // The module physical state
+    // -----------------------------------------------------------------------------------------------------------------
     // This is the initial 0.0 degree position calibration
     private final double calibrationOffset;
     /**
@@ -53,7 +85,7 @@ public class Mk4NeoModule {
      * the wheel - see {@link #speedMultiplier ) documentation for determining whether this is the
      * orientation of the front or the back. This will be in the range -pi to pi.
      */
-    private AngleD lastDirection = new AngleD(AngleD.RADIANS, 0.0);
+    private AngleD lastDirection = new AngleD(AngleUnit.RADIANS, 0.0);
     /**
      * The last direction encoder value that was set. Note, we always set the next spin by using a change angle.
      * This means the encoder setting can be anywhere from -infinity to +infinity.
@@ -64,6 +96,9 @@ public class Mk4NeoModule {
      */
     private double lastSpeed = 0.0;
 
+    /**
+     * Whether the last command was drive by speed, <code>true</code>, or drive by distance, <code>false</code>.
+     */
     private boolean driveBySpeed = true;
 
     /**
@@ -128,14 +163,14 @@ public class Mk4NeoModule {
         this.directionMotor.setInverted(true);
 
         // update PID controllers for spin and drive motors and initialize them
-        initPID(this.drivePID, Constants.DRIVE_kFF, Constants.DRIVE_kP, Constants.DRIVE_kI, Constants.DRIVE_IZONE);
-        initPID(this.directionPID, 0.0, Constants.SPIN_kP, Constants.SPIN_kI, 0.0);
+        initPID(this.drivePID, DRIVE_kFF, DRIVE_kP, DRIVE_kI, DRIVE_IZONE);
+        initPID(this.directionPID, 0.0, SPIN_kP, SPIN_kI, 0.0);
 
         // calibrate
         this.calibrationOffset = calibrationOffset;
         calibrate(); // reset direction encoder position
         this.directionPID.setReference(0.0, CANSparkMax.ControlType.kPosition);
-        lastDirection.setValue(AngleD.RADIANS, 0.0);
+        lastDirection.setValue(AngleUnit.RADIANS, 0.0);
         lastDirectionEncoder = 0.0;
     }
 
@@ -144,8 +179,8 @@ public class Mk4NeoModule {
      * constants for best control.
      */
     public void setSpinPID() {
-        directionPID.setP(Constants.SPIN_kP);
-        directionPID.setI(Constants.SPIN_kI);
+        directionPID.setP(SPIN_kP);
+        directionPID.setI(SPIN_kI);
     }
 
     /**
@@ -153,15 +188,15 @@ public class Mk4NeoModule {
      * * constants for best control.
      */
     public void setDrivePID() {
-        drivePID.setP(Constants.DRIVE_kP);
-        drivePID.setI(Constants.DRIVE_kI);
-        drivePID.setFF(Constants.DRIVE_kFF);
-        drivePID.setIZone(Constants.DRIVE_IZONE);
+        drivePID.setP(DRIVE_kP);
+        drivePID.setI(DRIVE_kI);
+        drivePID.setFF(DRIVE_kFF);
+        drivePID.setIZone(DRIVE_IZONE);
     }
 
     public void setDrivePosPID() {
-        drivePID.setP(Constants.DRIVE_POS_kP);
-        drivePID.setI(Constants.DRIVE_POS_kI);
+        drivePID.setP(DRIVE_POS_kP);
+        drivePID.setI(DRIVE_POS_kI);
         drivePID.setFF(0.0);
         drivePID.setIZone(0.0);
     }
@@ -219,7 +254,7 @@ public class Mk4NeoModule {
      * @return The last speed that was set in m/sec.
      */
     public double getLastSpeed() {
-        return lastSpeed * Constants.MAX_DRIVE_VELOCITY;
+        return lastSpeed * MAX_DRIVE_RPM;
     }
 
     /**
@@ -266,41 +301,41 @@ public class Mk4NeoModule {
      * foward-backaward multiplier for speed.
      *
      * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
-     *                      front of the robot, and positive is clockwise.
+     *                        front of the robot, and positive is clockwise.
      */
     public void setDirection(AngleD targetDirection) {
         // The real angle of the front of the wheel is 180 degrees away from the current angle if the wheel
         // is going backwards (i.e. the lastDirection was the last target angle for the module
-        AngleD realLastForward = (speedMultiplier > 0.0) ? lastDirection :
-                (lastDirection.getRadians() < 0.0) ? lastDirection.add(_PI) : lastDirection.subtract(_PI);
-        AngleD deltaRadians = new AngleD(targetDirection).subtract(realLastForward);
+        AngleD realLastDirection = (speedMultiplier > 0.0) ? lastDirection :
+                (lastDirection.getRadians() < 0.0) ? lastDirection.add(AngleD.PI) : lastDirection.subtract(AngleD.PI);
+        AngleD deltaDirection = new AngleD(targetDirection).subtract(realLastDirection);
         speedMultiplier = 1.0;
 
         // Since there is wrap-around at -180.0 and 180.0, it is easy to create cases where only a small correction
         // is required, but a very large deltaDegrees results because the spin is in the wrong direction. If the
         // angle is greater than 180 degrees in either direction, the spin is the wrong way. So the next section
         // checks that and changes the direction of the spin is the wrong way.
-        if (deltaRadians.getRadians() > _PI.getRadians()) {
-            deltaRadians.subtract(_TWO_PI);
-        } else if (deltaRadians.getRadians() < _NEG_PI.getRadians()) {
-            deltaRadians.add(_TWO_PI);
+        if (deltaDirection.isGreaterThan(AngleD.PI)) {
+            deltaDirection.subtract(AngleD.TWO_PI);
+        } else if (deltaDirection.isLessThan(AngleD.NEG_PI)) {
+            deltaDirection.add(AngleD.TWO_PI);
         }
 
         // So, the next bit is looking at whether it better to spin the front of the wheel to the
         // target and drive forward, or, to spin the back of the wheel to the target direction and drive
         // backwards - if the spin is greater than 90 degrees (pi/2 radians) either direction, it is better
         // to spin the shorter angle and run backwards.
-        if (deltaRadians.getRadians() > _PI_OVER_2.getRadians()) {
-            deltaRadians.subtract(_PI);
+        if (deltaDirection.isGreaterThan(AngleD.PI_OVER_2)) {
+            deltaDirection.subtract(AngleD.PI);
             speedMultiplier = -1.0;
-        } else if (deltaRadians.getRadians() < _NEG_PI_OVER_2.getRadians()) {
-            deltaRadians.add(_PI);
+        } else if (deltaDirection.isLessThan(AngleD.NEG_PI_OVER_2)) {
+            deltaDirection.add(AngleD.PI);
             speedMultiplier = -1.0;
         }
 
         // Compute and set the spin value
         lastDirection = targetDirection;
-        lastDirectionEncoder += (deltaRadians.getRadians() * Constants.RADIANS_TO_SPIN_ENCODER);
+        lastDirectionEncoder += (deltaDirection.getRadians() * RADIANS_TO_SPIN_ENCODER);
 
         directionPID.setReference(lastDirectionEncoder, CANSparkMax.ControlType.kPosition);
     }
@@ -309,9 +344,9 @@ public class Mk4NeoModule {
      * Set the direction and speed of the drive wheel in this module.
      *
      * @param targetDirection (double) The direction from -pi to pi radians where 0.0 is towards the
-     *                      front of the robot, and positive is clockwise.
-     * @param speed         (double) The normalized speed of the wheel from 0.0 to 1.0 where 1.0 is the maximum
-     *                      forward velocity.
+     *                        front of the robot, and positive is clockwise.
+     * @param speed           (double) The normalized speed of the wheel from 0.0 to 1.0 where 1.0 is the maximum
+     *                        forward velocity.
      */
     public void setDirectionAndSpeed(AngleD targetDirection, double speed) {
 
@@ -319,7 +354,7 @@ public class Mk4NeoModule {
 
         // Compute and set the speed value
         lastSpeed = speed;
-        speed *= Constants.MAX_DRIVE_VELOCITY * speedMultiplier;
+        speed *= MAX_DRIVE_RPM * speedMultiplier;
 
         if (!driveBySpeed) {
             setDrivePID();
@@ -334,8 +369,8 @@ public class Mk4NeoModule {
      * far more reliable that trying to use a PID to control rotation speed to lock on target.
      *
      * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
-     *                      front of the robot, and positive is clockwise.
-     * @param deltaTics     (double) The number of tics the drive motor should mov e.
+     *                        front of the robot, and positive is clockwise.
+     * @param deltaTics       (double) The number of tics the drive motor should mov e.
      */
     public void setDirectionAndDistance(AngleD targetDirection, double deltaTics) {
         setDirection(targetDirection);
