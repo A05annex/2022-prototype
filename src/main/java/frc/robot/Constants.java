@@ -5,6 +5,8 @@
 
 package frc.robot;
 
+import org.a05annex.util.Utl;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
  * constants. This class should not be used for any other purpose. All constants should be declared
@@ -33,9 +35,16 @@ public final class Constants {
 
     public static final class CalibrationOffset {
         public static final double
-                RF = 0.916,
-                RR = 0.980,
-                LR = 0.774,
-                LF = 0.853;
+                RF = 5.22626,
+                RR = 0.35889,
+                LR = 2.44823,
+                LF = 0.96947;
     }
+
+    // length and width from center of the wheels, in m
+    public static final double DRIVE_LENGTH = 0.5842;
+    public static final double DRIVE_WIDTH = 0.5842;
+    public static final double DRIVE_DIAGONAL = Utl.length(DRIVE_LENGTH, DRIVE_WIDTH);
+
+
 }
