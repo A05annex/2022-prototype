@@ -1,10 +1,12 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.sensors.CANCoderConfiguration;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkMaxPIDController;
 import com.ctre.phoenix.sensors.CANCoder;
+import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +33,7 @@ public class Mk4NeoModule {
      * fully charged batteries is about 5700RPM, so this gives about 12% headroom for friction, drag, battery
      * depletion, etc.
      */
-    static final double MAX_DRIVE_RPM= 5000;
+    static final double MAX_DRIVE_RPM = 5000;
     /**
      * The maximum speed of the module with this module implementation.
      */
@@ -39,7 +41,7 @@ public class Mk4NeoModule {
     /**
      * Based on telemetry feedback, 1 wheel direction revolution maps to 18 spin encoder revolutions
      */
-    static final double RADIANS_TO_SPIN_ENCODER = 18.0 / AngleD.TWO_PI.getRadians();
+    static final double RADIANS_TO_SPIN_ENCODER = 12.7999 / AngleD.TWO_PI.getRadians();
 
     // PID values for the spin spark motor encoder position controller PID loop
     static double SPIN_kP = 0.25;
@@ -153,7 +155,11 @@ public class Mk4NeoModule {
         this.calibrationEncoder = calibrationEncoder;
 
         // Initialize the calibration CANcoder
-        // TODO: do this ...... see the CANcoder documentation.
+        CANCoderConfiguration config = new CANCoderConfiguration();
+        config.sensorCoefficient = 2 * Math.PI / 4096.0;
+        config.unitString = "rad";
+        config.sensorDirection = true;
+        calibrationEncoder.configAllSettings(config);
 
         // reset motor controllers to factory default
         this.driveMotor.restoreFactoryDefaults();
@@ -229,22 +235,22 @@ public class Mk4NeoModule {
     }
 
     /**
-     * Returns the spin motor position as read from the encoder.
+     * Returns the direction motor position as read from the encoder.
      *
-     * @return The spin motor position as read from the encoder.
+     * @return The direction motor position as read from the encoder.
      */
-    public double getSpinEncoderPosition() {
+    public double getDirectionPosition() {
         return directionEncoder.getPosition();
     }
 
     /**
-     * Returns the value of the analog encoder as a double. The value goes from 0.0 to 1.0, wrapping around
-     * when the boundary between 0 and 2pi is reached. This method is provided primarily to read the
-     * analog encoder to determine the calibrationOffset that should be used for initialization.
+     * Returns the value of the calibration encoder as a double. The value goes from 0.0 to 2pi, wrapping
+     * around when the boundary between 0 and 2pi is reached. This method is provided primarily to read
+     * the calibration encoder to determine the calibrationOffset that should be used for initialization.
      *
-     * @return The analog spin encoder position.
+     * @return The analog direction encoder position.
      */
-    public double getAnalogEncoderPosition() {
+    public double getCalibrationPosition() {
         return calibrationEncoder.getAbsolutePosition();
     }
 
@@ -281,7 +287,8 @@ public class Mk4NeoModule {
      */
     private void calibrate() {
         // (actual - offset) * 360 / 20
-        directionEncoder.setPosition((calibrationEncoder.getAbsolutePosition() - calibrationOffset) * 18.0);
+        directionEncoder.setPosition(
+                (calibrationEncoder.getAbsolutePosition() - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
     }
 
 //    /**
@@ -303,11 +310,11 @@ public class Mk4NeoModule {
      * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
      *                        front of the robot, and positive is clockwise.
      */
-    public void setDirection(AngleD targetDirection) {
+    public void setDirection(AngleConstantD targetDirection) {
         // The real angle of the front of the wheel is 180 degrees away from the current angle if the wheel
         // is going backwards (i.e. the lastDirection was the last target angle for the module
         AngleD realLastDirection = (speedMultiplier > 0.0) ? lastDirection :
-                (lastDirection.getRadians() < 0.0) ? lastDirection.add(AngleD.PI) : lastDirection.subtract(AngleD.PI);
+                lastDirection.isLessThan(AngleD.ZERO) ? lastDirection.add(AngleD.PI) : lastDirection.subtract(AngleD.PI);
         AngleD deltaDirection = new AngleD(targetDirection).subtract(realLastDirection);
         speedMultiplier = 1.0;
 
@@ -334,7 +341,7 @@ public class Mk4NeoModule {
         }
 
         // Compute and set the spin value
-        lastDirection = targetDirection;
+        lastDirection.setValue(targetDirection);
         lastDirectionEncoder += (deltaDirection.getRadians() * RADIANS_TO_SPIN_ENCODER);
 
         directionPID.setReference(lastDirectionEncoder, CANSparkMax.ControlType.kPosition);
@@ -348,7 +355,7 @@ public class Mk4NeoModule {
      * @param speed           (double) The normalized speed of the wheel from 0.0 to 1.0 where 1.0 is the maximum
      *                        forward velocity.
      */
-    public void setDirectionAndSpeed(AngleD targetDirection, double speed) {
+    public void setDirectionAndSpeed(AngleConstantD targetDirection, double speed) {
 
         setDirection(targetDirection);
 
@@ -365,12 +372,13 @@ public class Mk4NeoModule {
 
     /**
      * Set the direction and distance in encoder tics that the module should move. We use this for targeting when
-     * the robot is stopped, and we are trying to get very fast response and a very solid lock on the target. This is
-     * far more reliable that trying to use a PID to control rotation speed to lock on target.
+     * the robot is stopped, and we are trying to get very fast rotation response and a very solid lock on the
+     * target. This is far more reliable that trying to use a PID to control rotation speed to lock on a
+     * target heading.
      *
      * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
      *                        front of the robot, and positive is clockwise.
-     * @param deltaTics       (double) The number of tics the drive motor should mov e.
+     * @param deltaTics       (double) The number of tics the drive motor should move.
      */
     public void setDirectionAndDistance(AngleD targetDirection, double deltaTics) {
         setDirection(targetDirection);

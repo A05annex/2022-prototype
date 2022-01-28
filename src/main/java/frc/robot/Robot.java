@@ -5,10 +5,10 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-
+import org.a05annex.frc.A05Robot;
 
 
 /**
@@ -17,13 +17,25 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
  * the package after creating this project, you must also update the build.gradle file in the
  * project.
  */
-public class Robot extends TimedRobot
+public class Robot extends A05Robot
 {
     private Command autonomousCommand;
     
     private RobotContainer robotContainer;
-    
-    
+
+    private void displayLabviewTelemetry() {
+        labviewTelemetry(0, "LF cal", robotContainer.leftFrontModule.getCalibrationPosition());
+        labviewTelemetry(1, "LR cal", robotContainer.leftRearModule.getCalibrationPosition());
+        labviewTelemetry(5, "RF cal", robotContainer.rightFrontModule.getCalibrationPosition());
+        labviewTelemetry(6, "RR cal", robotContainer.rightRearModule.getCalibrationPosition());
+
+        labviewTelemetry(3, "LF dir", robotContainer.leftFrontModule.getDirectionPosition());
+        labviewTelemetry(4, "LR dir", robotContainer.leftRearModule.getDirectionPosition());
+        labviewTelemetry(8, "RF dir", robotContainer.rightFrontModule.getDirectionPosition());
+        labviewTelemetry(9, "RR dir", robotContainer.rightRearModule.getDirectionPosition());
+
+    }
+
     /**
      * This method is run when the robot is first started up and should be used for any
      * initialization code.
@@ -31,6 +43,8 @@ public class Robot extends TimedRobot
     @Override
     public void robotInit()
     {
+        // initialize telemetry
+        initLabviewTelemetry();
         // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
         // autonomous chooser on the dashboard.
         robotContainer = new RobotContainer();
@@ -52,6 +66,7 @@ public class Robot extends TimedRobot
         // and running subsystem periodic() methods.  This must be called from the robot's periodic
         // block in order for anything in the Command-based framework to work.
         CommandScheduler.getInstance().run();
+        displayLabviewTelemetry();
     }
     
     
@@ -86,6 +101,7 @@ public class Robot extends TimedRobot
     @Override
     public void teleopInit()
     {
+
         // This makes sure that the autonomous stops running when
         // teleop starts running. If you want the autonomous to
         // continue until interrupted by another command, remove
@@ -94,12 +110,16 @@ public class Robot extends TimedRobot
         {
             autonomousCommand.cancel();
         }
+
+        robotContainer.getModuleDriveCommand().schedule();
     }
     
     
     /** This method is called periodically during operator control. */
     @Override
-    public void teleopPeriodic() {}
+    public void teleopPeriodic() {
+
+    }
     
     
     @Override

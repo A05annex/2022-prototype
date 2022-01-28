@@ -8,9 +8,8 @@ package frc.robot;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.commands.ExampleCommand;
-import frc.robot.subsystems.ExampleSubsystem;
-
+import frc.robot.commands.ModuleDriveCommand;
+import frc.robot.subsystems.Mk4NeoModule;
 
 
 /**
@@ -21,10 +20,28 @@ import frc.robot.subsystems.ExampleSubsystem;
  */
 public class RobotContainer
 {
-    // The robot's subsystems and commands are defined here...
-    private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
-    
-    private final ExampleCommand autoCommand = new ExampleCommand(exampleSubsystem);
+    public final XboxController xbox = new XboxController(0);
+
+    // subsystem declarations go here unless they are singletons.
+
+    public final Mk4NeoModule rightFrontModule = Mk4NeoModule.factory(
+            Constants.CAN_Devices.RF_DRIVE, Constants.CAN_Devices.RF_DIRECTION,
+            Constants.CAN_Devices.RF_CALIBRATION, Constants.CalibrationOffset.RF);
+    public final Mk4NeoModule rightRearModule = Mk4NeoModule.factory(
+            Constants.CAN_Devices.RR_DRIVE, Constants.CAN_Devices.RR_DIRECTION,
+            Constants.CAN_Devices.RR_CALIBRATION, Constants.CalibrationOffset.RR);
+    public final Mk4NeoModule leftRearModule = Mk4NeoModule.factory(
+            Constants.CAN_Devices.LR_DRIVE, Constants.CAN_Devices.LR_DIRECTION,
+            Constants.CAN_Devices.LR_CALIBRATION, Constants.CalibrationOffset.LR);
+    public final Mk4NeoModule leftFrontModule = Mk4NeoModule.factory(
+            Constants.CAN_Devices.LF_DRIVE, Constants.CAN_Devices.LF_DIRECTION,
+            Constants.CAN_Devices.LF_CALIBRATION, Constants.CalibrationOffset.LF);
+
+    // Command declarations go here
+    public ModuleDriveCommand moduleDriveCommand = new ModuleDriveCommand(
+            xbox,  rightFrontModule, rightRearModule, leftRearModule, leftFrontModule);
+
+    private final Command autoCommand = null;
     
     
     /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -47,7 +64,10 @@ public class RobotContainer
         // See https://docs.wpilib.org/en/stable/docs/software/commandbased/binding-commands-to-triggers.html
     }
     
-    
+    public ModuleDriveCommand getModuleDriveCommand()
+    {
+        return moduleDriveCommand;
+    }
     /**
      * Use this to pass the autonomous command to the main {@link Robot} class.
      *
