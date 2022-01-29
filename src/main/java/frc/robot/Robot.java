@@ -5,10 +5,10 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-
+import org.a05annex.frc.A05Robot;
 
 
 /**
@@ -17,13 +17,13 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
  * the package after creating this project, you must also update the build.gradle file in the
  * project.
  */
-public class Robot extends TimedRobot
+public class Robot extends A05Robot
 {
     private Command autonomousCommand;
     
     private RobotContainer robotContainer;
-    
-    
+
+
     /**
      * This method is run when the robot is first started up and should be used for any
      * initialization code.
@@ -86,6 +86,7 @@ public class Robot extends TimedRobot
     @Override
     public void teleopInit()
     {
+
         // This makes sure that the autonomous stops running when
         // teleop starts running. If you want the autonomous to
         // continue until interrupted by another command, remove
@@ -94,12 +95,15 @@ public class Robot extends TimedRobot
         {
             autonomousCommand.cancel();
         }
+
     }
     
     
     /** This method is called periodically during operator control. */
     @Override
-    public void teleopPeriodic() {}
+    public void teleopPeriodic() {
+
+    }
     
     
     @Override

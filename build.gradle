@@ -2,7 +2,7 @@ import edu.wpi.first.gradlerio.deploy.roborio.RoboRIO
 
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2022.1.1"
+    id "edu.wpi.first.GradleRIO" version "2022.2.1"
 }
 
 def javaVersion = JavaVersion.VERSION_11
@@ -54,6 +54,10 @@ test {
 }
 
 dependencies {
+    //implementation 'org.a05annex:a05annexUtil:0.9.1'
+    implementation 'org.jetbrains:annotations:17.0.0'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
     implementation wpi.java.deps.wpilib()
     implementation wpi.java.vendor.java()
 
@@ -72,10 +76,11 @@ dependencies {
     simulationRelease wpi.sim.enableRelease()
 
 
-    implementation platform("org.junit:junit-bom:5.8.2")
-    testImplementation "org.junit.jupiter:junit-jupiter-api"
-    testImplementation "org.junit.jupiter:junit-jupiter-params"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    testImplementation 'junit:junit:4.12'
+    testImplementation('org.junit.platform:junit-platform-runner:1.4.2')
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
+    testImplementation('org.mockito:mockito-core:3.+')
+    testImplementation('org.junit.jupiter:junit-jupiter-engine:5.4.2')
 }
 
 // Simulation configuration (e.g. environment variables).
