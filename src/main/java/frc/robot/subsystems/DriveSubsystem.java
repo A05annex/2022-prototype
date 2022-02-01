@@ -55,12 +55,10 @@ public class DriveSubsystem extends SubsystemBase {
     // keep track of the last chassis speeds for odometry
     private double m_thisChassisForward = 0.0;
     private double m_thisChassisStrafe = 0.0;
-    private double m_thisChassisRotation = 0.0;
     private long m_lastTime = System.currentTimeMillis();
     private final AngleD m_lastHeading = new AngleD(AngleD.ZERO);
     private double m_lastChassisForward = 0.0;
     private double m_lastChassisStrafe = 0.0;
-    private double m_lastChassisRotation = 0.0;
 
     private double m_fieldX = 0.0;
     private double m_fieldY = 0.0;
@@ -147,7 +145,6 @@ public class DriveSubsystem extends SubsystemBase {
             rrSpeed /= max;
             forward /= max;
             strafe /= max;
-            rotation /= max;
         }
 
         // if speed is small or 0, (i.e. essentially stopped), use the last angle because its next motion
@@ -168,8 +165,6 @@ public class DriveSubsystem extends SubsystemBase {
         // save the values we set for use in odometry calculations
         m_thisChassisForward = setSpeeds ? forward : 0.0;
         m_thisChassisStrafe = setSpeeds ? strafe : 0.0;
-        m_thisChassisRotation = setSpeeds ? rotation : 0.0;
-
     }
 
     /**
@@ -223,7 +218,7 @@ public class DriveSubsystem extends SubsystemBase {
     /**
      * Swerve drive with a field-relative direction, a speed and a rotation.
      *
-     * @param fieldDirection (AngleD) The direction in radians from PI to PI where 0.0 is away from the
+     * @param fieldDirection (AngleD) The direction in radians from -PI to PI where 0.0 is away from the
      *                       driver, and positive is clockwise.
      * @param speed          (double) Speed from 0.0 to 1.0.
      * @param rotation       (double) Clockwise rotation speed from -1.0 to 1.0.
@@ -326,7 +321,6 @@ public class DriveSubsystem extends SubsystemBase {
         m_fieldHeading.setValue(currentHeading);
         m_lastChassisForward = m_thisChassisForward;
         m_lastChassisStrafe = m_thisChassisStrafe;
-        m_lastChassisRotation = m_thisChassisRotation;
         m_lastTime = now;
     }
 }

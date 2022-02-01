@@ -41,6 +41,9 @@ public final class Constants {
                 LF = 0.96947;
     }
 
+    // ports for controllers
+    public static final int XBOX_PORT = 0;
+
     // length and width from center of the wheels, in m
     public static final double DRIVE_LENGTH = 0.5842;
     public static final double DRIVE_WIDTH = 0.5842;
@@ -50,5 +53,22 @@ public final class Constants {
     public static final double DRIVE_POS_TICS_PER_RADIAN = 10.385;
     public static final double MAX_METERS_PER_SEC = 3.2; //TODO: may have changed for the programmer robot w/o weight
 
+    // DriveCommand constants
+    // maximum change in joystick value per 20ms for speed and rotation
+    public static double DRIVE_MAX_SPEED_INC = 0.075;
+    public static double DRIVE_MAX_ROTATE_INC = 0.075;
+
+    // deadband of drive and rotate joysticks
+    public static double DRIVE_DEADBAND = 0.05;
+    public static double ROTATE_DEADBAND = 0.05;
+
+    // sensitivity and gain
+    public static double DRIVE_SPEED_SENSITIVITY = 3.0;
+    public static double DRIVE_SPEED_GAIN = 1.0;
+    public static double ROTATE_SENSITIVITY = 2.0;
+    public static double ROTATE_GAIN = 0.8;
+
+    // kP for keeping drive at the same orientation
+    public static double DRIVE_ORIENTATION_kP = 1.2;
 
 }
