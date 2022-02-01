@@ -46,5 +46,9 @@ public final class Constants {
     public static final double DRIVE_WIDTH = 0.5842;
     public static final double DRIVE_DIAGONAL = Utl.length(DRIVE_LENGTH, DRIVE_WIDTH);
 
+    // drive encoder tics per radian of robot rotation when rotation is controlled by position rather than speed.
+    public static final double DRIVE_POS_TICS_PER_RADIAN = 10.385;
+    public static final double MAX_METERS_PER_SEC = 3.2; //TODO: may have changed for the programmer robot w/o weight
+
 
 }
