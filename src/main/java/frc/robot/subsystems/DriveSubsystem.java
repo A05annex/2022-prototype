@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.NavX;
@@ -151,16 +152,26 @@ public class DriveSubsystem extends SubsystemBase {
         // will probably be very close to its current last motion - i.e. the next direction will probably
         // be very close to the last direction.
         double SMALL = 0.000001;
-        if (rfSpeed < SMALL) {m_RF_lastRadians.atan2(b, c);}
-        if (lfSpeed < SMALL) {m_LF_lastRadians.atan2(b, d);}
-        if (lrSpeed < SMALL) {m_LR_lastRadians.atan2(a, d);}
-        if (rrSpeed < SMALL) {m_RR_lastRadians.atan2(a, c);}
+        if (rfSpeed > SMALL) {m_RF_lastRadians.atan2(b, c);}
+        if (lfSpeed > SMALL) {m_LF_lastRadians.atan2(b, d);}
+        if (lrSpeed > SMALL) {m_LR_lastRadians.atan2(a, d);}
+        if (rrSpeed > SMALL) {m_RR_lastRadians.atan2(a, c);}
 
         // run wheels at speeds and angles
         m_rf.setDirectionAndSpeed(m_RF_lastRadians, setSpeeds ? rfSpeed : 0.0);
         m_lf.setDirectionAndSpeed(m_LF_lastRadians, setSpeeds ? lfSpeed : 0.0);
         m_lr.setDirectionAndSpeed(m_LR_lastRadians, setSpeeds ? lrSpeed : 0.0);
         m_rr.setDirectionAndSpeed(m_RR_lastRadians, setSpeeds ? rrSpeed : 0.0);
+
+        // print
+        SmartDashboard.putNumber("RF_rad", m_RF_lastRadians.getRadians());
+        SmartDashboard.putNumber("LF_rad", m_LF_lastRadians.getRadians());
+        SmartDashboard.putNumber("LR_rad", m_LR_lastRadians.getRadians());
+        SmartDashboard.putNumber("RR_rad", m_RR_lastRadians.getRadians());
+        SmartDashboard.putNumber("RF_speed", rfSpeed);
+        SmartDashboard.putNumber("LF_speed", lfSpeed);
+        SmartDashboard.putNumber("LR_speed", lrSpeed);
+        SmartDashboard.putNumber("RR_speed", rrSpeed);
 
         // save the values we set for use in odometry calculations
         m_thisChassisForward = setSpeeds ? forward : 0.0;
@@ -178,6 +189,10 @@ public class DriveSubsystem extends SubsystemBase {
     public void swerveDriveComponents(double forward, double strafe,
                                       double rotation) {
         setModulesForChassisMotion(forward, strafe, rotation, true);
+        //TODO: remove
+        SmartDashboard.putNumber("compForward", forward);
+        SmartDashboard.putNumber("compStrafe", strafe);
+        SmartDashboard.putNumber("compRotate", rotation);
     }
 
     /**

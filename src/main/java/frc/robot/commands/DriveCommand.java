@@ -1,6 +1,7 @@
 package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.Constants;
 import frc.robot.NavX;
@@ -40,10 +41,15 @@ public class DriveCommand extends CommandBase {
         double stickY = -m_xbox.getLeftY(); // Y is inverted so up is 1 and down is -1
 
         // left stick X for strafe speed
-        double stickX = m_xbox.getLeftY();
+        double stickX = m_xbox.getLeftX();
 
         // right stick X for rotation speed
         double stickRotate = m_xbox.getRightX();
+
+        // print stick values TODO: remove
+        SmartDashboard.putNumber("stickY", stickY);
+        SmartDashboard.putNumber("stickX", stickX);
+        SmartDashboard.putNumber("stickRotate", stickRotate);
 
         // limit rate of change of stick values to reduce skidding
         stickX = Utl.clip(stickX, m_lastStickX - Constants.DRIVE_MAX_SPEED_INC,
@@ -105,6 +111,9 @@ public class DriveCommand extends CommandBase {
         AngleD direction = new AngleD(AngleUnit.RADIANS, Math.atan2(stickX, stickY));
 
         m_driveSubsystem.swerveDriveFieldRelative(direction, speed, rotation);
+        SmartDashboard.putNumber("direction", direction.getRadians());
+        SmartDashboard.putNumber("speed", speed);
+        SmartDashboard.putNumber("rotation", rotation);
     }
 
     @Override
