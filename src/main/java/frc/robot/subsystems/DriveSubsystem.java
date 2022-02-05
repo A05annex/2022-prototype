@@ -1,7 +1,5 @@
 package frc.robot.subsystems;
 
-
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.NavX;
@@ -163,16 +161,6 @@ public class DriveSubsystem extends SubsystemBase {
         m_lr.setDirectionAndSpeed(m_LR_lastRadians, setSpeeds ? lrSpeed : 0.0);
         m_rr.setDirectionAndSpeed(m_RR_lastRadians, setSpeeds ? rrSpeed : 0.0);
 
-        // print
-        SmartDashboard.putNumber("RF_rad", m_RF_lastRadians.getRadians());
-        SmartDashboard.putNumber("LF_rad", m_LF_lastRadians.getRadians());
-        SmartDashboard.putNumber("LR_rad", m_LR_lastRadians.getRadians());
-        SmartDashboard.putNumber("RR_rad", m_RR_lastRadians.getRadians());
-        SmartDashboard.putNumber("RF_speed", rfSpeed);
-        SmartDashboard.putNumber("LF_speed", lfSpeed);
-        SmartDashboard.putNumber("LR_speed", lrSpeed);
-        SmartDashboard.putNumber("RR_speed", rrSpeed);
-
         // save the values we set for use in odometry calculations
         m_thisChassisForward = setSpeeds ? forward : 0.0;
         m_thisChassisStrafe = setSpeeds ? strafe : 0.0;
@@ -189,10 +177,6 @@ public class DriveSubsystem extends SubsystemBase {
     public void swerveDriveComponents(double forward, double strafe,
                                       double rotation) {
         setModulesForChassisMotion(forward, strafe, rotation, true);
-        //TODO: remove
-        SmartDashboard.putNumber("compForward", forward);
-        SmartDashboard.putNumber("compStrafe", strafe);
-        SmartDashboard.putNumber("compRotate", rotation);
     }
 
     /**
