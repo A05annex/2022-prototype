@@ -8,6 +8,8 @@ package frc.robot;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
 
@@ -20,22 +22,26 @@ import frc.robot.subsystems.DriveSubsystem;
  */
 public class RobotContainer
 {
-    // subsystem declarations
-    DriveSubsystem m_driveSubsystem;
+    // subsystem declarations (should all be instances)
+    DriveSubsystem m_driveSubsystem = DriveSubsystem.getInstance();
 
     // command declarations
     DriveCommand m_driveCommand;
+    private final Command autoCommand = null; // autonomous command
+
+    // declare NavX, used for resetting initial heading
+    NavX m_navx = NavX.getInstance();
 
     // controller declarations
     XboxController m_xbox = new XboxController(Constants.XBOX_PORT);
 
-    private final Command autoCommand = null;
+    // controller button declarations
+    JoystickButton m_xboxA = new JoystickButton(m_xbox, 1);
+
+
     /** The container for the robot. Contains subsystems, OI devices, and commands. */
     public RobotContainer()
     {
-        // subsystems
-        m_driveSubsystem = DriveSubsystem.getInstance();
-
         // commands
         m_driveCommand = new DriveCommand(m_xbox);
 
@@ -57,6 +63,7 @@ public class RobotContainer
     {
         // Add button to command mappings here.
         // See https://docs.wpilib.org/en/stable/docs/software/commandbased/binding-commands-to-triggers.html
+        m_xboxA.whenPressed(new InstantCommand(m_navx::initializeHeadingAndNav));
     }
     
 
