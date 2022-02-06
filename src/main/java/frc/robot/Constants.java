@@ -35,10 +35,10 @@ public final class Constants {
 
     public static final class CalibrationOffset {
         public static final double
-                RF = 5.22626,
-                RR = 0.35889,
-                LR = 2.44823,
-                LF = 0.96947;
+                RF = 5.207,
+                RR = 0.389,
+                LR = 2.448,
+                LF = 0.960;
     }
 
     // length and width from center of the wheels, in m
