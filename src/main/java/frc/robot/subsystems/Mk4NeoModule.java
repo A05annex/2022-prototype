@@ -44,7 +44,7 @@ public class Mk4NeoModule {
     static final double RADIANS_TO_SPIN_ENCODER = 12.7999 / AngleD.TWO_PI.getRadians();
 
     // PID values for the spin spark motor encoder position controller PID loop
-    static double SPIN_kP = 0.25;
+    static double SPIN_kP = 0.5;
     static double SPIN_kI = 0.0;
 
     // PID values for the drive spark motor controller speed PID loop
