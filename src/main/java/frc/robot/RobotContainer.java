@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.LimelightSubsystem;
 
 
 /**
@@ -24,6 +25,7 @@ public class RobotContainer
 {
     // subsystem declarations (should all be instances)
     DriveSubsystem m_driveSubsystem = DriveSubsystem.getInstance();
+    LimelightSubsystem m_limelightSubsystem = LimelightSubsystem.getInstance();
 
     // command declarations
     DriveCommand m_driveCommand;

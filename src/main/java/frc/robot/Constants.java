@@ -44,6 +44,16 @@ public final class Constants {
     // ports for controllers
     public static final int XBOX_PORT = 0;
 
+    // limelight constants stuff
+    public static final class LimelightPipelines {
+        public static final int
+            DRIVER = 1,
+            SHOOTER = 2;
+    }
+
+    // startup pipeline for limelight
+    public static final int LIMELIGHT_DEFAULT_PIPELINE = LimelightPipelines.DRIVER;
+
     // length and width from center of the wheels, in m
     public static final double DRIVE_LENGTH = 0.5842;
     public static final double DRIVE_WIDTH = 0.5842;
