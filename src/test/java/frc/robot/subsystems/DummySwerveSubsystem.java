@@ -8,9 +8,9 @@ import org.a05annex.util.AngleConstantD;
 /**
  * This is a drive subsystem used for drive testing only. It is both a
  * {@link edu.wpi.first.wpilibj2.command.Subsystem}, and implements {@link ISwerveDrive}, so it is a test
- * substitute for our serve drive subsystem.
+ * substitute for our robot serve drive subsystem.
  */
-public class TestSwerveDriveSubsystem extends SubsystemBase implements ISwerveDrive {
+public class DummySwerveSubsystem extends SubsystemBase implements ISwerveDrive {
 
     // With eager singleton initialization, any static variables/fields used in the 
     // constructor must appear before the "INSTANCE" variable so that they are initialized 
@@ -21,7 +21,7 @@ public class TestSwerveDriveSubsystem extends SubsystemBase implements ISwerveDr
      * the {@link #getInstance()} method to get the single instance (rather
      * than trying to construct an instance of this class.)
      */
-    private final static TestSwerveDriveSubsystem INSTANCE = new TestSwerveDriveSubsystem();
+    private final static DummySwerveSubsystem INSTANCE = new DummySwerveSubsystem();
 
     /**
      * Returns the Singleton instance of this TestSwerveDriveSubsystem. This static method
@@ -29,7 +29,7 @@ public class TestSwerveDriveSubsystem extends SubsystemBase implements ISwerveDr
      * of this class. For example: {@code TestSwerveDriveSubsystem.getInstance();}
      */
     @SuppressWarnings("WeakerAccess")
-    public static TestSwerveDriveSubsystem getInstance() {
+    public static DummySwerveSubsystem getInstance() {
         return INSTANCE;
     }
 
@@ -38,7 +38,7 @@ public class TestSwerveDriveSubsystem extends SubsystemBase implements ISwerveDr
      * is private since this class is a Singleton. Code should use
      * the {@link #getInstance()} method to get the singleton instance.
      */
-    private TestSwerveDriveSubsystem() {
+    private DummySwerveSubsystem() {
         // TODO: Set the default command, if any, for this subsystem by calling setDefaultCommand(command)
         //       in the constructor or in the robot coordination class, such as RobotContainer.
         //       Also, you can call addChild(name, sendableChild) to associate sendables with the subsystem

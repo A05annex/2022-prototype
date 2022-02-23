@@ -3,9 +3,9 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 
 
-public class TestScheduledCommand extends CommandBase {
+public class DummyScheduledCommand extends CommandBase {
 
-    public TestScheduledCommand() {
+    public DummyScheduledCommand() {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements();
