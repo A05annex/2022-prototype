@@ -37,9 +37,9 @@ public class Mk4NeoModule {
     /**
      * The maximum speed of the module with this module implementation.
      */
-    static final double MAX_METERS_PER_SEC = 3.2;
+    public static final double MAX_METERS_PER_SEC = 3.2;
     /**
-     * Based on telemetry feedback, 1 wheel direction revolution maps to 18 spin encoder revolutions
+     * Based on telemetry feedback, 1 wheel direction revolution maps to 12.7999 spin encoder revolutions
      */
     static final double RADIANS_TO_SPIN_ENCODER = 12.7999 / AngleD.TWO_PI.getRadians();
 

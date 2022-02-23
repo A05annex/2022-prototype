@@ -5,11 +5,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.NavX;
+import org.a05annex.frc.robot.subsystems.ISwerveDrive;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.Utl;
 
-public class DriveSubsystem extends SubsystemBase {
+public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     /**
      * The Singleton instance of this DriveSubsystem. Code should use
      * the {@link #getInstance()} method to get the single instance (rather
@@ -186,6 +187,7 @@ public class DriveSubsystem extends SubsystemBase {
      * @param strafe   Strafe right. From -1 (full left)  to 1 (full right).
      * @param rotation Clockwise rotation. From -1 (full counter-clockwise) to 1 (full clockwise).
      */
+    @Override
     public void swerveDriveComponents(double forward, double strafe,
                                       double rotation) {
         setModulesForChassisMotion(forward, strafe, rotation, true);
@@ -197,7 +199,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     /**
      * Prepare the swerve drive to run with the swerve drive with the specified {@code  forward}, {@code strafe},
-     * and {@code rotation} chassis relative components. 'Prepare', in this context, means orient all the modules
+     * and {@code rotation} chassis relative components. 'Prepare', in this context, means orient all the modules,
      * so they are ready to perform this command but set the module speeds to 0.0; In this way movement can start
      * smoothly without additional module reorientation. This method is used to initialize the robot before the
      * start of an autonomous path.
@@ -206,6 +208,7 @@ public class DriveSubsystem extends SubsystemBase {
      * @param strafe   Strafe right. From -1 (full left)  to 1 (full right).
      * @param rotation Clockwise rotation. From -1 (full counter-clockwise) to 1 (full clockwise).
      */
+    @Override
     public void prepareForDriveComponents(double forward, double strafe,
                                           double rotation)
     {
@@ -225,6 +228,7 @@ public class DriveSubsystem extends SubsystemBase {
      * @param speed            (double) Speed from 0.0 to 1.0.
      * @param rotation         (double) Clockwise rotation speed from -1.0 to 1.0.
      */
+    @Override
     public void swerveDrive(AngleConstantD chassisDirection, double speed, double rotation) {
         swerveDriveComponents(chassisDirection.cos() * speed,
                 chassisDirection.sin() * speed, rotation);
@@ -238,6 +242,7 @@ public class DriveSubsystem extends SubsystemBase {
      * @param speed          (double) Speed from 0.0 to 1.0.
      * @param rotation       (double) Clockwise rotation speed from -1.0 to 1.0.
      */
+    @Override
     public void swerveDriveFieldRelative(AngleConstantD fieldDirection, double speed, double rotation) {
         swerveDrive(new AngleD(fieldDirection).subtract(m_navx.getHeading()), speed, rotation);
     }
@@ -286,6 +291,7 @@ public class DriveSubsystem extends SubsystemBase {
      *
      * @param targetHeading (AngleConstantD) The desired chassis heading on the field.
      */
+    @Override
     public void setHeading(AngleConstantD targetHeading) {
         m_RF_lastRadians.atan2(Constants.DRIVE_LENGTH, -Constants.DRIVE_WIDTH);
         m_LF_lastRadians.atan2(Constants.DRIVE_LENGTH, Constants.DRIVE_WIDTH);
