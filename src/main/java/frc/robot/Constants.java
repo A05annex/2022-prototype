@@ -45,8 +45,12 @@ public final class Constants {
     // ports for controllers
     public static final int XBOX_PORT = 0;
 
-    // length and width from center of the wheels, in m (note chassis is 30" square, the bolt pattern is
-    // 29" square, wheels are 2.75" in from the bolt pattern or centered on the corners of a 23.5" square)
+    // for prototype, length and width from center of the wheels, in m (note chassis is 30" square,
+    // the bolt pattern is 29" square, wheels are 2.75" in from the bolt pattern or centered on the
+    // corners of a 23.5"(0.5969m) square.
+    // For competition, length and width from center of the wheels, in m (note chassis is 28" square,
+    // the bolt pattern is 27" square, wheels are 2.75" in from the bolt pattern or centered on the
+    // corners of a 21.5"(0.5461m) square.
     public static final double DRIVE_LENGTH = 0.5969;
     public static final double DRIVE_WIDTH = 0.5969;
     public static final double DRIVE_DIAGONAL = Utl.length(DRIVE_LENGTH, DRIVE_WIDTH);
